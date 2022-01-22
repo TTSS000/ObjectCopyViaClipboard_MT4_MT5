@@ -2,6 +2,7 @@
 //  "00-Scr-ObjectCopier.mq4"  -- read/write objects to/from global variable
 //
 //    Ver. 1.00  2008/9/26(Fri)
+//    Ver. 1.20  2022/1/22
 //
 #property  copyright  "00"
 #property  link       "http://www.mql4.com/"
@@ -210,20 +211,21 @@ string getPrefix(string type, string sObjStr)
 //----------------------------------------------------------------------
 string getSlavePrefix(string type, string sObjStr)
 {
-    sObjStr = strSPACEdecode(sObjStr);
-    //return(StringConcatenate(sSlavePrefix, " ", type, " ", sObjStr));
-    if(ObjectFind(sObjStr) ==-1) return(sObjStr);
-    for(int i=0;i<128;i++){
-      int ch = StringGetChar(sObjStr,StringLen(sObjStr)-1);
-      if(ch>=48 && ch<=57){
-         sObjStr = StringSubstr(sObjStr,0,StringLen(sObjStr)-2);
-      }else{break;}
-    }
-    i = 0;
-    while(ObjectFind(sObjStr+i) !=-1){
-      i++;
-    }
-    return(sObjStr+i);
+  int i=0;
+  sObjStr = strSPACEdecode(sObjStr);
+  //return(StringConcatenate(sSlavePrefix, " ", type, " ", sObjStr));
+  if(ObjectFind(sObjStr) ==-1) return(sObjStr);
+  //for(int i=0;i<128;i++){
+  //  int ch = StringGetChar(sObjStr,StringLen(sObjStr)-1);
+  //  if(ch>=48 && ch<=57){ // 0x30 to 0x39 '0' to '9'
+  //     sObjStr = StringSubstr(sObjStr,0,StringLen(sObjStr)-2);
+  //  }else{break;}
+  //}
+  i = 0;
+  while(ObjectFind(sObjStr+"_"+i) !=-1 && i < 128){
+    i++;
+  }
+  return(sObjStr+"_"+i);
 }
 //----------------------------------------------------------------------
 string varSet(string sVarName, double v = 0.0)
@@ -962,7 +964,9 @@ void updateObjects()
 	    
 	case OBJ_TREND:
 	    sObjName = getSlavePrefix(S_TREND, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_TREND, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_TREND, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetStyle(sObjName, width, style, col);
@@ -973,7 +977,9 @@ void updateObjects()
 	    
 	case OBJ_RECTANGLE:
 	    sObjName = getSlavePrefix(S_RECTANGLE, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_RECTANGLE, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_RECTANGLE, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetStyle(sObjName, width, style, col);
@@ -983,7 +989,10 @@ void updateObjects()
 	    
 	case OBJ_VLINE:
 	    sObjName = getSlavePrefix(S_VLINE, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetStyle(sObjName, width, style, col);
 	    objSetBack(sObjName, back);
@@ -992,7 +1001,11 @@ void updateObjects()
 	    
 	case OBJ_HLINE:
 	    sObjName = getSlavePrefix(S_HLINE, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+        //Print ("sObjName:"+sObjName);
+  	    ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetStyle(sObjName, width, style, col);
 	    objSetBack(sObjName, back);
@@ -1002,7 +1015,10 @@ void updateObjects()
 	case OBJ_TEXT:
 	    text     = varGetText(StringConcatenate(sVarName, " text"));
 	    sObjName = getSlavePrefix(S_TEXT, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_TEXT, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_TEXT, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_TEXT, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetText(sObjName, text, fontSize, col);
 	    objSetBack(sObjName, back);
@@ -1012,7 +1028,10 @@ void updateObjects()
 	    
 	case OBJ_ARROW:
 	    sObjName = getSlavePrefix(S_ARROW, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetStyle(sObjName, width, style, col);
 	    objSetBack(sObjName, back);
@@ -1022,7 +1041,10 @@ void updateObjects()
 	    
 	case OBJ_FIBO:
 	    sObjName = getSlavePrefix(S_FIBO, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetStyle(sObjName, width, style, col);
@@ -1035,7 +1057,10 @@ void updateObjects()
 	    
 	case OBJ_EXPANSION:
 	    sObjName = getSlavePrefix(S_EXPANSION, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetPos3(sObjName, t3, p3);
@@ -1048,7 +1073,10 @@ void updateObjects()
 	    break;
 	case OBJ_FIBOCHANNEL:
 	    sObjName = getPrefix(S_FIBOCHANNEL, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetPos3(sObjName, t3, p3);
@@ -1061,7 +1089,10 @@ void updateObjects()
 	    break;
 	case OBJ_FIBOFAN:
 	    sObjName = getPrefix(S_FIBOFAN, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    //objSetPos3(sObjName, t3, p3);
@@ -1073,7 +1104,10 @@ void updateObjects()
 	    break;
 	case OBJ_CHANNEL:
 	    sObjName = getPrefix(S_CHANNEL, sVarParam[2]);
-	    ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
+	    //ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
+      if(ObjectFind(0, sObjName)<0){
+  	    ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
+      }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetPos2(sObjName, t2, p2);
 	    objSetPos3(sObjName, t3, p3);
