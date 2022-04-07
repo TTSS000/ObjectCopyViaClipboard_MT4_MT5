@@ -3,6 +3,7 @@
 //
 //    Ver. 1.00  2008/9/26(Fri)
 //    Ver. 1.20  2022/1/22
+//    Ver. 1.30  2022/4/7
 //
 #property  copyright  "00"
 #property  link       "http://www.mql4.com/"
@@ -33,7 +34,9 @@
 #define GMEM_MOVEABLE   2
 #define CF_UNICODETEXT  13
 
-#property  show_confirm
+//#property  show_confirm
+#property script_show_inputs
+
 
 //---- defines
 #define S_TREND      "trend"
@@ -41,6 +44,7 @@
 #define S_VLINE      "vline"
 #define S_HLINE      "hline"
 #define S_TEXT       "text"
+#define S_LABEL       "label"
 #define S_ARROW      "arrow"
 #define S_FIBO       "fibo"
 #define S_EXPANSION  "expansion"
@@ -58,14 +62,15 @@ extern bool   bCopyTrend      = true;       // copy OBJ_TREND or not
 extern bool   bCopyRectangle  = true;       // copy OBJ_RECTANGLE or not
 extern bool   bCopyVLine      = true;       // copy OBJ_VLINE or not
 extern bool   bCopyHLine      = true;       // copy OBJ_HLINE or not
-extern bool   bCopyText       = false;       // copy OBJ_TEXT or not
+extern bool   bCopyText       = true;       // copy OBJ_TEXT or not
+extern bool   bCopyLabel      = true;       // copy OBJ_LABEL or not
 extern bool   bCopyArrow      = true;       // copy OBJ_ARROW or not
 extern bool   bCopyFibo       = true;       // copy OBJ_FIBO or not
 extern bool   bCopyExpansion  = true;       // copy OBJ_EXPANSION or not
 extern bool   bCopyFiboChannel= true;       // copy OBJ_FIBOCHANNEL or not
 extern bool   bCopyFiboFan    = true;       // copy OBJ_FIBOFAN or not
 extern bool   bCopyChannel    = true;       // copy OBJ_CHANNEL or not
-
+extern bool bClipBoardOnly=true;
 
 //---- vars
 string sScriptName      = "00-Scr-ObjectCopier";
@@ -113,28 +118,28 @@ string CopyTextFromClipboardBad()
   string strBuf=""; 
 
   if(IsClipboardFormatAvailable(CF_UNICODETEXT)) {
-    Print ("000");
+    //Print ("000");
     // Try grabbing ownership of the clipboard 
     if(OpenClipboard(0) != 0) {
-      Print ("010");
+      //Print ("010");
       // Try emptying the clipboard
       int hMem = GetClipboardData(CF_UNICODETEXT);
       if(hMem != NULL){
         int pMem = GlobalLock(hMem);
         if(pMem != NULL){
-          Print ("pMem="+pMem);
+          //Print ("pMem="+pMem);
           //lstrcpy(strBuf, pMem);
           //MoveMemoryA(strBuf, pMem, 10);         
           lstrcatW(strBuf, pMem);            
           //StringConcatenate(strBuf, pMem);            
-          Print ("strBuf0="+strBuf);
+          //Print ("strBuf0="+strBuf);
         }
         GlobalUnlock(hMem); 
       }
       CloseClipboard();
     }
   }
-  Print ("strBuf1="+strBuf);
+  //Print ("strBuf1="+strBuf);
   return(strBuf);
 }
 //----------------------------------------------------------------------
@@ -145,18 +150,15 @@ void init()
     sMasterPrefix = StringConcatenate(sScriptShortName, "-", sMasterPrefix);
     sSlavePrefixOld = StringConcatenate(sScriptName, "-", sSlavePrefix);
     sSlavePrefix = StringConcatenate(sScriptShortName, "-", sSlavePrefix);
-    
 }
-
 //----------------------------------------------------------------------
 void deinit()
 {
   if(PasteMode){
-    GlobalVariablesDeleteAll(sMasterPrefixOld);
-    GlobalVariablesDeleteAll(sMasterPrefix);
+    //GlobalVariablesDeleteAll(sMasterPrefixOld);
+    //GlobalVariablesDeleteAll(sMasterPrefix);
   }
 }
-
 //----------------------------------------------------------------------
 int getObjType(string sParam[])
 {
@@ -173,6 +175,8 @@ int getObjType(string sParam[])
 	type = OBJ_HLINE;
     } else if (sType == S_TEXT) {
 	type = OBJ_TEXT;
+    } else if (sType == S_LABEL) {
+	type = OBJ_LABEL;
     } else if (sType == S_ARROW) {
 	type = OBJ_ARROW;
     } else if (sType == S_FIBO) {
@@ -191,7 +195,6 @@ int getObjType(string sParam[])
     
     return(type);
 }
-
 //----------------------------------------------------------------------
 string getPrefix(string type, string sObjStr)
 {
@@ -414,22 +417,36 @@ string varSetFibo(string sVarName, int FIBOLEVELS,double &FiboLines[])
 
 
 //----------------------------------------------------------------------
-string varGetText(string sVarPrefix)
+string varGetText(string sVarPrefix, int length)
 {
-    string text;
-    int nVar = GlobalVariablesTotal();
-    
-    for (int jVar = 0; jVar < nVar; jVar++) {
-	string sVarName = GlobalVariableName(jVar);
-	int x = StringFind(sVarName, sVarPrefix);
-	if (x >= 0) {
-	    text = StringSubstr(sVarName, x + StringLen(sVarPrefix));
-	}
-    }
-    
-    return(text);
-}
+  //int nVar = GlobalVariablesTotal();
+  int iChar=0;
+  string text_local="";
 
+  //Print ("text_len="+length);
+
+  for(int str_idx = 0 ; str_idx < length ; str_idx++){
+  	iChar = GlobalVariableGet(StringConcatenate(sVarPrefix, " text"+str_idx));
+    text_local=text_local+ShortToString(iChar);
+    //Print (iChar);
+  }
+  //Print(text_local);
+  return(text_local);
+}
+//----------------------------------------------------------------------
+string varGetFontName(string sVarPrefix, int length)
+{
+  //int nVar = GlobalVariablesTotal();
+  int iChar=0;
+  string text_local="";
+
+  //Print ("fn_len="+length);
+  for(int str_idx = 0 ; str_idx < length ; str_idx++){
+  	iChar = GlobalVariableGet(StringConcatenate(sVarPrefix, " fn"+str_idx));
+    text_local=text_local+ShortToString(iChar);
+  }
+  return(text_local);
+}
 //----------------------------------------------------------------------
 void objSetTime1(string sObjName, datetime t)
 {
@@ -442,6 +459,12 @@ void objSetPrice1(string sObjName, double p)
     ObjectSet(sObjName, OBJPROP_PRICE1, p);
 }
 
+//----------------------------------------------------------------------
+void objSetXY(string sObjName, int x, int y)
+{
+    ObjectSetInteger(0, sObjName, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, sObjName, OBJPROP_YDISTANCE, y);
+}
 //----------------------------------------------------------------------
 void objSetPos1(string sObjName, datetime t, double p)
 {
@@ -887,14 +910,14 @@ void updateVars()
 //----------------------------------------------------------------------
 void updateObjects()
 {
-    int nObj = ObjectsTotal();
-    int nVar = GlobalVariablesTotal();
-    int jObj, jVar;
-    string sObjName, sObjParam[];
-    string sVarName, sVarParam[];
-    int nDel = 0;
-    
-    /*for (jObj = 0; jObj < nObj; jObj++) {
+  int nObj = ObjectsTotal();
+  int nVar = GlobalVariablesTotal();
+  int jObj, jVar;
+  string sObjName, sObjParam[];
+  string sVarName, sVarParam[];
+  int nDel = 0;
+  
+  /*for (jObj = 0; jObj < nObj; jObj++) {
 	sObjName = ObjectName(jObj);
 	
 	if (StringFind(sObjName, sSlavePrefix) < 0) {
@@ -920,100 +943,121 @@ void updateObjects()
 	}
     }*/
     
-    for (jVar = 0; jVar < nVar; jVar++) {
-	sVarName = GlobalVariableName(jVar);
-	if (StringFind(sVarName, sSlavePrefix) < 0) {
-	    continue;
-	}
-	int n = strSplit(sVarName, sVarParam);
-	if (n != 3) {
-	    continue;
-	}
-	int type = getObjType(sVarParam);
+  for (jVar = 0; jVar < nVar; jVar++) {
+  	sVarName = GlobalVariableName(jVar);
+  	if (StringFind(sVarName, sSlavePrefix) < 0) {
+ 	    continue;
+  	}
+  	int n = strSplit(sVarName, sVarParam);
+  	if (n != 3) {
+ 	    continue;
+  	}
+  	int type = getObjType(sVarParam);
+  	//Print ("debug objtype="+type);
 	
-	datetime t1         = GlobalVariableGet(StringConcatenate(sVarName, " t1"));
-	double   p1         = GlobalVariableGet(StringConcatenate(sVarName, " p1"));
-	datetime t2         = GlobalVariableGet(StringConcatenate(sVarName, " t2"));
-	double   p2         = GlobalVariableGet(StringConcatenate(sVarName, " p2"));
-	datetime t3         = GlobalVariableGet(StringConcatenate(sVarName, " t3"));
-	double   p3         = GlobalVariableGet(StringConcatenate(sVarName, " p3"));
-	int      width      = GlobalVariableGet(StringConcatenate(sVarName, " width"));
-	int      style      = GlobalVariableGet(StringConcatenate(sVarName, " style"));
-	int      ray        = GlobalVariableGet(StringConcatenate(sVarName, " ray"));
-	int      back       = GlobalVariableGet(StringConcatenate(sVarName, " back"));
-	color    col        = GlobalVariableGet(StringConcatenate(sVarName, " color"));
-	int      fontSize   = GlobalVariableGet(StringConcatenate(sVarName, " fontSize"));
-	double   angle      = GlobalVariableGet(StringConcatenate(sVarName, " angle"));
-	double   scale      = GlobalVariableGet(StringConcatenate(sVarName, " scale"));
-	int      levelWidth = GlobalVariableGet(StringConcatenate(sVarName, " levelWidth"));
-	int      levelStyle = GlobalVariableGet(StringConcatenate(sVarName, " levelStyle"));
-	color    levelCol   = GlobalVariableGet(StringConcatenate(sVarName, " levelColor"));
-	int      arrowCode  = GlobalVariableGet(StringConcatenate(sVarName, " arrowCode"));
-	int      tf         = GlobalVariableGet(StringConcatenate(sVarName, " tf"));
-	int      FIBOLEVELS = GlobalVariableGet(StringConcatenate(sVarName, " fl"));
+  	int pos_x         = GlobalVariableGet(StringConcatenate(sVarName, " x"));
+  	int pos_y         = GlobalVariableGet(StringConcatenate(sVarName, " y"));
+  	datetime t1         = GlobalVariableGet(StringConcatenate(sVarName, " t1"));
+  	double   p1         = GlobalVariableGet(StringConcatenate(sVarName, " p1"));
+  	datetime t2         = GlobalVariableGet(StringConcatenate(sVarName, " t2"));
+  	double   p2         = GlobalVariableGet(StringConcatenate(sVarName, " p2"));
+  	datetime t3         = GlobalVariableGet(StringConcatenate(sVarName, " t3"));
+  	double   p3         = GlobalVariableGet(StringConcatenate(sVarName, " p3"));
+  	int      width      = GlobalVariableGet(StringConcatenate(sVarName, " width"));
+  	int      style      = GlobalVariableGet(StringConcatenate(sVarName, " style"));
+  	int      ray        = GlobalVariableGet(StringConcatenate(sVarName, " ray"));
+  	int      back       = GlobalVariableGet(StringConcatenate(sVarName, " back"));
+  	color    col        = GlobalVariableGet(StringConcatenate(sVarName, " color"));
+  	int      fontSize   = GlobalVariableGet(StringConcatenate(sVarName, " fontSize"));
+  	double   angle      = GlobalVariableGet(StringConcatenate(sVarName, " angle"));
+  	double   scale      = GlobalVariableGet(StringConcatenate(sVarName, " scale"));
+  	int      levelWidth = GlobalVariableGet(StringConcatenate(sVarName, " levelWidth"));
+  	int      levelStyle = GlobalVariableGet(StringConcatenate(sVarName, " levelStyle"));
+  	color    levelCol   = GlobalVariableGet(StringConcatenate(sVarName, " levelColor"));
+  	int      arrowCode  = GlobalVariableGet(StringConcatenate(sVarName, " arrowCode"));
+  	int      tf         = GlobalVariableGet(StringConcatenate(sVarName, " tf"));
+  	int      FIBOLEVELS = GlobalVariableGet(StringConcatenate(sVarName, " fl"));
+  	int      text_len   = GlobalVariableGet(StringConcatenate(sVarName, " textlen"));
+  	int      fontname_len   = GlobalVariableGet(StringConcatenate(sVarName, " fnlen"));
+
+    //Print("text_len000="+text_len);
+    //Print("fontname_len000="+fontname_len);
+    //Print("fontSize000="+fontSize);
+    //Print("p1 000="+p1);
 	
-   double FiboLines[32];
-	if(FIBOLEVELS>0){
+    double FiboLines[32];
+  	if(FIBOLEVELS>0){
       for(int i=0;i<FIBOLEVELS;i++){
         FiboLines[i] = GlobalVariableGet(StringConcatenate(sVarName, " f",i));
       }
-	}
-	string   text;
-	
-	switch (type) {
-	    
-	case OBJ_TREND:
-	    sObjName = getSlavePrefix(S_TREND, sVarParam[2]);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_TREND, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetRay(sObjName, ray);
-	    objSetBack(sObjName, back);
-	    objSetTF(sObjName, tf);
-	    break;
-	    
-	case OBJ_RECTANGLE:
-	    sObjName = getSlavePrefix(S_RECTANGLE, sVarParam[2]);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_RECTANGLE, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetTF(sObjName, tf);
-	    break;
-	    
-	case OBJ_VLINE:
-	    sObjName = getSlavePrefix(S_VLINE, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetTF(sObjName, tf);
-	    break;
-	    
-	case OBJ_HLINE:
-	    sObjName = getSlavePrefix(S_HLINE, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-        //Print ("sObjName:"+sObjName);
-  	    ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetTF(sObjName, tf);
-	    break;
-	    
-	case OBJ_TEXT:
-	    text     = varGetText(StringConcatenate(sVarName, " text"));
+  	}
+
+  	string   text="";
+  	string fontName="";
+  	switch (type) {
+  
+  	case OBJ_TREND:
+  	    sObjName = getSlavePrefix(S_TREND, sVarParam[2]);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_TREND, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetRay(sObjName, ray);
+  	    objSetBack(sObjName, back);
+  	    objSetTF(sObjName, tf);
+  	    break;
+  	    
+  	case OBJ_RECTANGLE:
+  	    sObjName = getSlavePrefix(S_RECTANGLE, sVarParam[2]);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_RECTANGLE, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetTF(sObjName, tf);
+  	    break;
+  	    
+  	case OBJ_VLINE:
+  	    sObjName = getSlavePrefix(S_VLINE, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_VLINE, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetTF(sObjName, tf);
+  	    break;
+  	    
+  	case OBJ_HLINE:
+  	    sObjName = getSlavePrefix(S_HLINE, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+          //Print ("sObjName:"+sObjName);
+    	    if(!ObjectCreate(sObjName, OBJ_HLINE, 0, 0, 0)){
+    	      //Print ("ERR: ObjectCreate HLINE : "+GetLastError()); 
+    	    }
+          //Print ("HLINE not found");
+        }else{
+          //Print ("HLINE found");
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetTF(sObjName, tf);
+  	    break;
+  	    
+  	case OBJ_TEXT:
+  	  //Print("debug here text");
+	    //text     = varGetText(StringConcatenate(sVarName, " text"));
+	    text     = varGetText(sVarName, text_len);
+      //Print (text);
+	    fontName = varGetFontName(sVarName, fontname_len);
+      //Print (fontName);
 	    sObjName = getSlavePrefix(S_TEXT, sVarParam[2]);
 	    //ObjectCreate(sObjName, OBJ_TEXT, 0, 0, 0);
       if(ObjectFind(0, sObjName)<0){
@@ -1021,107 +1065,126 @@ void updateObjects()
       }
 	    objSetPos1(sObjName, t1, p1);
 	    objSetText(sObjName, text, fontSize, col);
+      ObjectSetString(0, sObjName, OBJPROP_FONT, fontName); 
 	    objSetBack(sObjName, back);
 	    objSetAngle(sObjName, angle);
 	    objSetTF(sObjName, tf);
 	    break;
-	    
-	case OBJ_ARROW:
-	    sObjName = getSlavePrefix(S_ARROW, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+  	case OBJ_LABEL:
+  	  //Print("debug here text");
+	    //text     = varGetText(StringConcatenate(sVarName, " text"));
+	    text     = varGetText(sVarName, text_len);
+      //Print (text);
+	    fontName = varGetFontName(sVarName, fontname_len);
+      //Print (fontName);
+	    sObjName = getSlavePrefix(S_LABEL, sVarParam[2]);
+	    //ObjectCreate(sObjName, OBJ_TEXT, 0, 0, 0);
       if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+  	    ObjectCreate(sObjName, OBJ_LABEL, 0, 0, 0);
       }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetStyle(sObjName, width, style, col);
+	    objSetXY(sObjName, pos_x, pos_y);
+	    objSetText(sObjName, text, fontSize, col);
+      ObjectSetString(0, sObjName, OBJPROP_FONT, fontName); 
 	    objSetBack(sObjName, back);
-	    objSetArrowCode(sObjName, arrowCode);
+	    objSetAngle(sObjName, angle);
 	    objSetTF(sObjName, tf);
 	    break;
-	    
-	case OBJ_FIBO:
-	    sObjName = getSlavePrefix(S_FIBO, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetRay(sObjName, ray);
-	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
-	    objSetTF(sObjName, tf);
-	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
-	    break;
-	    
-	case OBJ_EXPANSION:
-	    sObjName = getSlavePrefix(S_EXPANSION, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetPos3(sObjName, t3, p3);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetRay(sObjName, ray);
-	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
-	    objSetTF(sObjName, tf);
-	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
-	    break;
-	case OBJ_FIBOCHANNEL:
-	    sObjName = getPrefix(S_FIBOCHANNEL, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetPos3(sObjName, t3, p3);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetRay(sObjName, ray);
-	    objSetLevelStyle(sObjName, width/*levelWidth*/, style/*levelStyle*/, col /*levelCol*/);
-	    objSetTF(sObjName, tf);
-	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
-	    break;
-	case OBJ_FIBOFAN:
-	    sObjName = getPrefix(S_FIBOFAN, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    //objSetPos3(sObjName, t3, p3);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
-	    objSetTF(sObjName, tf);
-	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
-	    break;
-	case OBJ_CHANNEL:
-	    sObjName = getPrefix(S_CHANNEL, sVarParam[2]);
-	    //ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
-      if(ObjectFind(0, sObjName)<0){
-  	    ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
-      }
-	    objSetPos1(sObjName, t1, p1);
-	    objSetPos2(sObjName, t2, p2);
-	    objSetPos3(sObjName, t3, p3);
-	    objSetStyle(sObjName, width, style, col);
-	    objSetBack(sObjName, back);
-	    objSetLevelStyle(sObjName, width/*levelWidth*/, style/*levelStyle*/, col /*levelCol*/);
-	    objSetTF(sObjName, tf);
-	    break;	  	    	    
-	default:
-	    break;
-	}
-    }
+  	case OBJ_ARROW:
+  	    sObjName = getSlavePrefix(S_ARROW, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_ARROW, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetArrowCode(sObjName, arrowCode);
+  	    objSetTF(sObjName, tf);
+  	    break;
+  	    
+  	case OBJ_FIBO:
+  	    sObjName = getSlavePrefix(S_FIBO, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_FIBO, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetRay(sObjName, ray);
+  	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
+  	    objSetTF(sObjName, tf);
+  	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
+  	    break;
+  	    
+  	case OBJ_EXPANSION:
+  	    sObjName = getSlavePrefix(S_EXPANSION, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_EXPANSION, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetPos3(sObjName, t3, p3);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetRay(sObjName, ray);
+  	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
+  	    objSetTF(sObjName, tf);
+  	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
+  	    break;
+  	case OBJ_FIBOCHANNEL:
+  	    sObjName = getPrefix(S_FIBOCHANNEL, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_FIBOCHANNEL, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetPos3(sObjName, t3, p3);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetRay(sObjName, ray);
+  	    objSetLevelStyle(sObjName, width/*levelWidth*/, style/*levelStyle*/, col /*levelCol*/);
+  	    objSetTF(sObjName, tf);
+  	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
+  	    break;
+  	case OBJ_FIBOFAN:
+  	    sObjName = getPrefix(S_FIBOFAN, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_FIBOFAN, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    //objSetPos3(sObjName, t3, p3);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetLevelStyle(sObjName, levelWidth, levelStyle, levelCol);
+  	    objSetTF(sObjName, tf);
+  	    objSetFibo(sObjName, FIBOLEVELS,FiboLines);
+  	    break;
+  	case OBJ_CHANNEL:
+  	    sObjName = getPrefix(S_CHANNEL, sVarParam[2]);
+  	    //ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
+        if(ObjectFind(0, sObjName)<0){
+    	    ObjectCreate(sObjName, OBJ_CHANNEL, 0, 0, 0);
+        }
+  	    objSetPos1(sObjName, t1, p1);
+  	    objSetPos2(sObjName, t2, p2);
+  	    objSetPos3(sObjName, t3, p3);
+  	    objSetStyle(sObjName, width, style, col);
+  	    objSetBack(sObjName, back);
+  	    objSetLevelStyle(sObjName, width/*levelWidth*/, style/*levelStyle*/, col /*levelCol*/);
+  	    objSetTF(sObjName, tf);
+  	    break;	  	    	    
+  	default:
+  	    break;
+  	}
+  }
     
-    WindowRedraw();
+  WindowRedraw();
 }
 //----------------------------------------------------------------------
 void  ConvertStringToGlobalVariables(string string_clipboard)
@@ -1168,6 +1231,12 @@ void start()
   //if(ret==IDNO) PasteMode = true;
   if(StringFind(WindowExpertName(),"COPY")==-1) PasteMode = true;
     if(PasteMode){
+    Print("Pasete");
+      if(bClipBoardOnly){
+        GlobalVariablesDeleteAll(sMasterPrefixOld);
+        GlobalVariablesDeleteAll(sMasterPrefix);
+      }
+
       string string_clipboard;
       string_clipboard = CopyTextFromClipboard();
       ConvertStringToGlobalVariables(string_clipboard);
