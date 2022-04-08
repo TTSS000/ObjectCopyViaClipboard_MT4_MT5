@@ -4,6 +4,7 @@
 //    Ver. 1.00  2008/9/26(Fri)
 //    Ver. 1.20  2022/1/22
 //    Ver. 1.30  2022/4/7
+//    Ver. 1.31  2022/4/8
 //
 #property  copyright  "00"
 #property  link       "http://www.mql4.com/"
@@ -394,13 +395,17 @@ string varSetText(string sVarName, string text, int fontSize, color col)
     
     return(s);
 }
+//----------------------------------------------------------------------
 string varSetTF(string sVarName, int tf)
 {
-    string s = StringConcatenate(sVarName, " tf");
-    GlobalVariableSet(s, tf);
-    
-    return(s);
+  string s = StringConcatenate(sVarName, " tf");
+  GlobalVariableSet(s, tf);
+  string s2 = StringConcatenate(sVarName, " tftype");
+  GlobalVariableSet(s2, 4);
+  
+  return(s+s2);
 }
+//----------------------------------------------------------------------
 string varSetFibo(string sVarName, int FIBOLEVELS,double &FiboLines[])
 {
     //if(FIBOLEVELS==0) return("");
@@ -414,8 +419,6 @@ string varSetFibo(string sVarName, int FIBOLEVELS,double &FiboLines[])
     }
     return(s);
 }
-
-
 //----------------------------------------------------------------------
 string varGetText(string sVarPrefix, int length)
 {
@@ -976,6 +979,7 @@ void updateObjects()
   	color    levelCol   = GlobalVariableGet(StringConcatenate(sVarName, " levelColor"));
   	int      arrowCode  = GlobalVariableGet(StringConcatenate(sVarName, " arrowCode"));
   	int      tf         = GlobalVariableGet(StringConcatenate(sVarName, " tf"));
+  	int      tftype         = GlobalVariableGet(StringConcatenate(sVarName, " tftype"));
   	int      FIBOLEVELS = GlobalVariableGet(StringConcatenate(sVarName, " fl"));
   	int      text_len   = GlobalVariableGet(StringConcatenate(sVarName, " textlen"));
   	int      fontname_len   = GlobalVariableGet(StringConcatenate(sVarName, " fnlen"));
@@ -984,6 +988,55 @@ void updateObjects()
     //Print("fontname_len000="+fontname_len);
     //Print("fontSize000="+fontSize);
     //Print("p1 000="+p1);
+    // OBJ_NO_PERIODS, EMPTY  -1  The object is not drawn in all timeframes
+    // OBJ_PERIOD_M1, 0x0001, The object is drawn in 1-minute chart
+    // OBJ_PERIOD_M5,  0x0002 The object is drawn in 5-minute chart
+    // OBJ_PERIOD_M15, 0x0004 The object is drawn in 15-minute chart
+    // OBJ_PERIOD_M30, 0x0008 The object is drawn in 30-minute chart
+    // OBJ_PERIOD_H1, 0x0010 The object is drawn in 1-hour chart
+    // OBJ_PERIOD_H4, 0x0020 The object is drawn in 4-hour chart
+    // OBJ_PERIOD_D1, 0x0040 The object is drawn in day charts
+    // OBJ_PERIOD_W1, 0x0080 The object is drawn in week charts
+    // OBJ_PERIOD_MN1 0x0100 The object is drawn in month charts
+    // OBJ_ALL_PERIODS 0x01ff The object is drawn in all timeframes
+
+    int tf_tmp=0;
+    if(tftype == 5){
+      if(tf==0x001fffff){
+        tf_tmp=OBJ_ALL_PERIODS;
+      }else if(tf == 0){
+        tf_tmp=OBJ_NO_PERIODS;
+      }else{
+        if(tf&0x00000001){
+          tf_tmp |= OBJ_PERIOD_M1;
+        }
+        if(tf&0x00000010){
+          tf_tmp |= OBJ_PERIOD_M5;
+        }
+        if(tf&0x00000100){
+          tf_tmp |= OBJ_PERIOD_M15;
+        }
+        if(tf&0x00000400){
+          tf_tmp |= OBJ_PERIOD_M30;
+        }
+        if(tf&0x00000800){
+          tf_tmp |= OBJ_PERIOD_H1;
+        }
+        if(tf&0x00004000){
+          tf_tmp |= OBJ_PERIOD_H4;
+        }
+        if(tf&0x00040000){
+          tf_tmp |= OBJ_PERIOD_D1;
+        }
+        if(tf&0x00080000){
+          tf_tmp |= OBJ_PERIOD_W1;
+        }
+        if(tf&0x00100000){
+          tf_tmp |= OBJ_PERIOD_MN1;
+        }
+      }
+      tf=tf_tmp;
+    }
 	
     double FiboLines[32];
   	if(FIBOLEVELS>0){
@@ -992,7 +1045,7 @@ void updateObjects()
       }
   	}
 
-  	string   text="";
+  	string text="";
   	string fontName="";
   	switch (type) {
   
